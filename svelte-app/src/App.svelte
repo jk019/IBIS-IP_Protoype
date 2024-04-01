@@ -6,7 +6,39 @@
 			options: [
 				{
 					name: "Journey Information V 1.0",
-					methods: ["Get Journey Details", "Update Journey Status"],
+					methods: [
+						"GetAllDataResponse",
+						"GetCurrentBlockRefResponse",
+						"RetrievePartialTripSequenceRequest",
+						"RetrievePartialTripSequenceResponse",
+						"RetrieveSpecificBlockInformationRequest",
+						"RetrieveSpecificBlockInformationResponse",
+						"RetrieveSpecificStopInformationRequest",
+						"RetrieveSpecificStopInformationResponse",
+						"RetrieveSpecificTSPPointInformationRequest",
+						"RetrieveSpecificTSPPointInformationResponse",
+						"RetrieveSpecificTimingPointInformationRequest",
+						"RetrieveSpecificTimingPointInformationResponse",
+						"RetrieveSpecificGNSSPointInformationRequest",
+						"RetrieveSpecificGNSSPointInformationResponse",
+						"RetrieveSpecificBeaconPointInformationRequest",
+						"RetrieveSpecificBeaconPointInformationResponse",
+						"ListAllDisplayContentsResponse",
+						"ListAllLineInformationResponse",
+						"ListAllDestinationInformationResponse",
+						"ListAllViaPointResponse",
+						"ListAllAdditionalDisplayInformationResponse",
+						"ListAllRoutesResponse",
+						"RetrieveAllRoutesPerLineRequest",
+						"RetrieveAllRoutesPerLineResponse",
+						"SetBlockNumberRequest",
+						"SetTripRefRequest",
+						"SetDisplayContentRequest",
+						"SetCurrentTripIndexRequest",
+						"SetCurrentStopIndexRequest",
+						"SetAdditionalAnnouncementRequest",
+						"SetAdditionalTextMessageRequest",
+					],
 				},
 				{
 					name: "Beacon Location V 1.0",
@@ -83,61 +115,143 @@
 	let selectedOption = { name: "", methods: [] };
 
 	function selectOption(optionName) {
-		const option = selectedService.options.find((o) => o.name === optionName);
+		const option = selectedService.options.find(
+			(o) => o.name === optionName,
+		);
 		if (option) {
 			selectedOption = option;
 		}
 	}
 </script>
 
-<h1>Verfügbare Services</h1>
+<div class="row modern-row">
+<div class="col-7 modern-col">
+<div class="content modern-content">
+	<h1>Verfügbare Services</h1>
+	<p>Die folgenden Services sind in diesem Zug verfügbar:</p>
+	<br /><br /><br />
 
-<div class="dropdown">
-	<button
-		class="btn btn-secondary dropdown-toggle"
-		type="button"
-		data-bs-toggle="dropdown"
-		aria-expanded="false"
-	>
-		{selectedService.name}
-	</button>
-	<ul class="dropdown-menu">
-		{#each services as service}
-			<li>
-				<a
-					class="dropdown-item"
-					href="#"
-					on:click={() => selectService(service.name)}
-					>{service.name}</a
-				>
-			</li>
-		{/each}
-	</ul>
+	<div class="dropdown">
+		<button
+			class="btn btn-secondary dropdown-toggle"
+			type="button"
+			data-bs-toggle="dropdown"
+			aria-expanded="false"
+		>
+			{selectedService.name}
+		</button>
+		<ul class="dropdown-menu">
+			{#each services as service}
+				<li>
+					<a
+						class="dropdown-item"
+						href="#"
+						on:click={() => selectService(service.name)}
+						>{service.name}</a
+					>
+				</li>
+			{/each}
+		</ul>
+	</div>
+
+
+		<h2>Optionen für {selectedService.name}</h2>
+		<p>
+			Um die Funktionen der jeweiligen Services anzuzeigen, drücken Sie
+			bitte auf den jeweiligen Service
+		</p>
+		<div class="d-flex">
+			<!-- Buttons auf der linken Seite -->
+			<div class="flex-shrink-1">
+				{#each selectedService.options as option, index}
+					<button
+						class="btn btn-primary my-1"
+						type="button"
+						data-bs-toggle="collapse"
+						data-bs-target="#collapseExample{index}"
+						aria-expanded="false"
+						aria-controls="collapseExample"
+					>
+						{option.name}
+					</button>
+				{/each}
+			</div>
+		</div>
+
+
+	
+</div>
 </div>
 
-<h2>Optionen für {selectedService.name}</h2>
-<ul>
+
+<div class="col-5 modern-col heightlimit">
+<!-- Collapse-Inhalte auf der rechten Seite -->
+<div class="flex-grow-1 ms-3">
+	{#if selectedService.options.length>1}
+		<h2>Folgende Funktionen sind für diesen Dienst verfügbar</h2>
+	{/if}
+	
 	{#each selectedService.options as option, index}
-		<p class="d-inline-flex gap-1">
-			<button
-				class="btn btn-primary"
-				type="button"
-				data-bs-toggle="collapse"
-				data-bs-target="#collapseExample{index}" 
-				aria-expanded="false"
-				aria-controls="collapseExample"
-			>
-				{option.name}
-			</button><br />
-		</p>
-		<div class="collapse" id="collapseExample{index}"> <!-- Dynamische ID -->
+		<div class="collapse" id="collapseExample{index}">
 			<div class="card card-body">
 				{#each option.methods as method}
-					<div class="card card-body">
-						{method}
+					<div class="card mb-2">
+						<div class="card-body">
+							{method}
+						</div>
 					</div>
 				{/each}
 			</div>
 		</div>
 	{/each}
-</ul>
+</div></div>
+</div>
+
+<style>
+	.content {
+		display: flex;
+		flex-direction: column;
+		align-items: left;
+	}
+	.dropdown {
+		display: inline-block;
+		align-items: left;
+	}
+	.card {
+		margin-top: 10px;
+	}
+	.card-body {
+		padding: 10px;
+	}
+	.btn {
+		margin: 5px;
+		background-color: gray;
+		color: white;
+
+	}
+
+	.modern-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+.modern-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
+
+.modern-content {
+  font-size: 18px;
+  color: #333;
+}
+
+
+
+</style>
