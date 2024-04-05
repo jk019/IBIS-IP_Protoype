@@ -1,11 +1,13 @@
 <script>
+    import Navigation from "./Components/navigation.svelte";
+
 	let services = [
 		{
 			id: 1,
-			name: "Common V 1.0",
+			group_name: "Common V 1.0",
 			options: [
 				{
-					name: "Journey Information V 1.0",
+					service_name: "Journey Information V 1.0",
 					methods: [
 						"GetAllDataResponse",
 						"GetCurrentBlockRefResponse",
@@ -41,59 +43,59 @@
 					],
 				},
 				{
-					name: "Beacon Location V 1.0",
+					service_name: "Beacon Location V 1.0",
 					methods: ["Find Nearest Beacon", "Get Beacon Details"],
 				},
 				{
-					name: "Distance Location V 1.0",
+					service_name: "Distance Location V 1.0",
 					methods: ["Calculate Distance", "Get Distance Logs"],
 				},
 			],
 		},
 		{
 			id: 2,
-			name: "Common V 2.0",
+			group_name: "Common V 2.0",
 			options: [
 				{
-					name: "Video Display V 2.0",
+					service_name: "Video Display V 2.0",
 					methods: ["Display Video", "Configure Display Settings"],
 				},
 				{
-					name: "Video Recording V 2.0",
+					service_name: "Video Recording V 2.0",
 					methods: ["Start Video Recording", "Stop Video Recording"],
 				},
 			],
 		},
 		{
 			id: 3,
-			name: "Common V 2.1",
+			group_name: "Common V 2.1",
 			options: [
 				{
-					name: "Door State V 2.1",
+					service_name: "Door State V 2.1",
 					methods: ["Query Door State", "Change Door State"],
 				},
 			],
 		},
 		{
 			id: 4,
-			name: "Common V 2.2",
+			group_name: "Common V 2.2",
 			options: [
 				{
-					name: "Customer Information V 2.2",
+					service_name: "Customer Information V 2.2",
 					methods: ["Retrieve Customer Info", "Update Customer Info"],
 				},
 				{
-					name: "Customer Feedback V 2.2",
+					service_name: "Customer Feedback V 2.2",
 					methods: ["Collect Feedback", "Analyze Feedback"],
 				},
 			],
 		},
 		{
 			id: 5,
-			name: "Common V 2.3",
+			group_name: "Common V 2.3",
 			options: [
 				{
-					name: "Customer Information V 2.3",
+					service_name: "Customer Information V 2.3",
 					methods: [
 						"Access Customer Profile",
 						"Modify Customer Profile",
@@ -103,18 +105,25 @@
 		},
 	];
 
-	let selectedService = services[0];
+	let selectedGroup = services[0];
 
 	function selectService(serviceName) {
-		const service = services.find((s) => s.name === serviceName);
+		const service = services.find((s) => s.group_name === serviceName);
 		if (service) {
-			selectedService = service; // Aktualisiere das komplette Objekt
+			selectedGroup = service; // Aktualisiere das komplette Objekt
 		}
 	}
 
 	let selectedOption = { name: "", methods: [] };
 
+	// damit die Gruppe rechts nur angezeigt wird, wenn ausgeklappt wird.
+	let isCollapsed = true;
+	function toggleCollapse() {
+		isCollapsed = !isCollapsed;
+	}
 </script>
+
+<Navigation />
 
 <div class="row modern-row">
 	<div class="col-7 modern-col">
@@ -137,9 +146,11 @@
 								data-bs-target="#collapseExample{index}"
 								aria-expanded="false"
 								aria-controls="collapseExample"
-								on:click={() => selectService(services.name)}
+								on:click={() =>
+									selectService(services.group_name)}
+								on:click={toggleCollapse}
 							>
-								{option.name}
+								{option.service_name}
 							</button>
 						{/each}
 					{/each}
@@ -149,14 +160,25 @@
 		</div>
 	</div>
 
+	<!-- Collapse-Inhalte auf der rechten Seite -->
 	<div class="col-5 modern-col heightlimit">
-		<!-- Collapse-Inhalte auf der rechten Seite -->
 		<div class="flex-grow-1 ms-3">
-			<h2>Folgende Funktionen sind für diesen Dienst verfügbar</h2>
-
-			{#each selectedService.options as option, index}
+			{#each selectedGroup.options as option, index}
 				<div class="collapse" id="collapseExample{index}">
 					<div class="card card-body">
+						<h2>{option.service_name}</h2>
+
+						{#if !isCollapsed}
+							<p>gehört zu: {selectedGroup.group_name}</p>
+
+							<p>Dienst ist erreichbar über:</p>
+							<ul>
+								<li>Protokoll:  _ibisip_udp</li>
+								<li>Port: 8008</li>
+								<li>Zielhost: 192.0.9.86</li>
+							</ul>
+						{/if}
+
 						{#each option.methods as method}
 							<div class="card mb-2">
 								<div class="card-body">
