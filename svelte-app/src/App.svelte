@@ -103,7 +103,7 @@
 		},
 	];
 
-	let selectedService = { name: "Choose common service", options: [] };
+	let selectedService = services[0];
 
 	function selectService(serviceName) {
 		const service = services.find((s) => s.name === serviceName);
@@ -114,97 +114,61 @@
 
 	let selectedOption = { name: "", methods: [] };
 
-	function selectOption(optionName) {
-		const option = selectedService.options.find(
-			(o) => o.name === optionName,
-		);
-		if (option) {
-			selectedOption = option;
-		}
-	}
 </script>
 
 <div class="row modern-row">
-<div class="col-7 modern-col">
-<div class="content modern-content">
-	<h1>Verfügbare Services</h1>
-	<p>Die folgenden Services sind in diesem Zug verfügbar:</p>
-	<br /><br /><br />
+	<div class="col-7 modern-col">
+		<div class="content modern-content">
+			<h1>Verfügbare Services</h1>
+			<p>
+				Die folgenden Services sind in diesem Zug verfügbar: Um die
+				Funktionen der jeweiligen Services anzuzeigen, drücken Sie bitte
+				auf den jeweiligen Service
+			</p>
 
-	<div class="dropdown">
-		<button
-			class="btn btn-secondary dropdown-toggle"
-			type="button"
-			data-bs-toggle="dropdown"
-			aria-expanded="false"
-		>
-			{selectedService.name}
-		</button>
-		<ul class="dropdown-menu">
-			{#each services as service}
-				<li>
-					<a
-						class="dropdown-item"
-						href="#"
-						on:click={() => selectService(service.name)}
-						>{service.name}</a
-					>
-				</li>
-			{/each}
-		</ul>
+			<div class="d-flex">
+				<div class="flex-shrink-1">
+					{#each services as services}
+						{#each services.options as option, index}
+							<button
+								class="btn btn-primary my-1"
+								type="button"
+								data-bs-toggle="collapse"
+								data-bs-target="#collapseExample{index}"
+								aria-expanded="false"
+								aria-controls="collapseExample"
+								on:click={() => selectService(services.name)}
+							>
+								{option.name}
+							</button>
+						{/each}
+					{/each}
+				</div>
+			</div>
+			<br /><br /><br />
+		</div>
 	</div>
 
+	<div class="col-5 modern-col heightlimit">
+		<!-- Collapse-Inhalte auf der rechten Seite -->
+		<div class="flex-grow-1 ms-3">
+			<h2>Folgende Funktionen sind für diesen Dienst verfügbar</h2>
 
-		<h2>Optionen für {selectedService.name}</h2>
-		<p>
-			Um die Funktionen der jeweiligen Services anzuzeigen, drücken Sie
-			bitte auf den jeweiligen Service
-		</p>
-		<div class="d-flex">
-			<!-- Buttons auf der linken Seite -->
-			<div class="flex-shrink-1">
-				{#each selectedService.options as option, index}
-					<button
-						class="btn btn-primary my-1"
-						type="button"
-						data-bs-toggle="collapse"
-						data-bs-target="#collapseExample{index}"
-						aria-expanded="false"
-						aria-controls="collapseExample"
-					>
-						{option.name}
-					</button>
-				{/each}
-			</div>
-		</div>
-
-
-	
-</div>
-</div>
-
-
-<div class="col-5 modern-col heightlimit">
-<!-- Collapse-Inhalte auf der rechten Seite -->
-<div class="flex-grow-1 ms-3">
-	{#if selectedService.options.length>1}
-		<h2>Folgende Funktionen sind für diesen Dienst verfügbar</h2>
-	{/if}
-	
-	{#each selectedService.options as option, index}
-		<div class="collapse" id="collapseExample{index}">
-			<div class="card card-body">
-				{#each option.methods as method}
-					<div class="card mb-2">
-						<div class="card-body">
-							{method}
-						</div>
+			{#each selectedService.options as option, index}
+				<div class="collapse" id="collapseExample{index}">
+					<div class="card card-body">
+						{#each option.methods as method}
+							<div class="card mb-2">
+								<div class="card-body">
+									{method}
+								</div>
+							</div>
+						{/each}
 					</div>
-				{/each}
-			</div>
+				</div>
+			{/each}
 		</div>
-	{/each}
-</div></div>
+	</div>
 </div>
 
 <style>
@@ -227,31 +191,27 @@
 		margin: 5px;
 		background-color: gray;
 		color: white;
-
 	}
 
 	.modern-row {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 20px;
-  background-color: #f5f5f5;
-}
+		display: flex;
+		justify-content: center;
+		align-items: flex-start;
+		padding: 20px;
+		background-color: #f5f5f5;
+	}
 
-.modern-col {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-}
+	.modern-col {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		border-radius: 10px;
+		box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+	}
 
-.modern-content {
-  font-size: 18px;
-  color: #333;
-}
-
-
-
+	.modern-content {
+		font-size: 18px;
+		color: #333;
+	}
 </style>
