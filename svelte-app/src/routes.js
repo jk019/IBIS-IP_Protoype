@@ -4,6 +4,7 @@ import Devices from './Devices.svelte';
 import DevicesMDNS from './DevicesMDNS.svelte';
 import Testing from './Testing.svelte';
 import Testing2 from './Testing2.svelte';
+import Backup from './Backup.svelte';
 
 
 export default {
@@ -18,5 +19,7 @@ export default {
 
     "/testing": Testing,
 
-    "/testing2": Testing2
+    "/testing2": Testing2,
+
+    "/backup": Backup,
 };

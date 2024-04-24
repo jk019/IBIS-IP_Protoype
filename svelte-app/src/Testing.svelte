@@ -26,8 +26,6 @@
 
     // A function to parse XML to JSON-like object
     function parseXML(xmlDoc) {
-
-   
         // You need to customize this function based on the structure of your XML files
         // Here's a general example for parsing:
         const elements = xmlDoc.documentElement.childNodes;
@@ -43,7 +41,9 @@
 
     // Example call to fetch an XML (you can pass any URL here)
     fetchXML("https://w1.weather.gov/xml/current_obs/KMSP.xml");
+
 </script>
+
 
 {#if loading}
     <p>Loading...</p>
