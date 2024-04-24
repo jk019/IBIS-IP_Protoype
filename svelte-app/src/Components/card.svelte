@@ -61,5 +61,9 @@
         margin: 5px;
         background-color: white;
         color: black;
+        white-space: normal;
+        overflow-wrap: break-word; /* Add this line */
+        word-break: break-word; /* Add this line */
     }
+
 </style>

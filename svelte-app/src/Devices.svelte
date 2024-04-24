@@ -193,11 +193,9 @@
         return ipServices;
     }
 
-
     //////////////////////////////////////////
     // Funktionen für die einzelnen Services //
     //////////////////////////////////////////
-
 
     // Testfunktion zum holen der XML-Werte
     let xmlReturn = [];
@@ -230,44 +228,49 @@
 
     let customerInfo = {}; // Initialisiert als leeres Objekt
     async function CustomerInformationService() {
-    try {
-        const response = await fetch("/localFiles/CustomerInformationService.GetAllData.xml");
-        const data = await response.text();
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(data, "text/xml");
+        try {
+            const response = await fetch(
+                "/localFiles/CustomerInformationService.GetAllData.xml",
+            );
+            const data = await response.text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(data, "text/xml");
 
-        // Function to recursively traverse and extract data from each node
-        function extractData(node) {
-            const result = {};
-            for (const child of node.children) {
-                if (child.children.length > 0) {
-                    result[child.tagName] = extractData(child); // Recursive call for nested elements
-                } else {
-                    result[child.tagName] = child.textContent;
+            // Function to recursively traverse and extract data from each node
+            function extractData(node) {
+                const result = {};
+                for (const child of node.children) {
+                    if (child.children.length > 0) {
+                        result[child.tagName] = extractData(child); // Recursive call for nested elements
+                    } else {
+                        result[child.tagName] = child.textContent;
+                    }
                 }
+                return result;
             }
-            return result;
+
+            // Parsing the new XML structure
+            const allData = xmlDoc.querySelector("AllData");
+
+            const customerInfo = {
+                timeStamp: allData.querySelector("TimeStamp Value").textContent,
+                vehicleRef:
+                    allData.querySelector("VehicleRef Value").textContent,
+                defaultLanguage: allData.querySelector("DefaultLanguage Value")
+                    .textContent,
+                tripInformation: {
+                    tripRef: allData.querySelector("TripRef Value").textContent,
+                    stopSequence: Array.from(
+                        allData.querySelectorAll("StopSequence StopPoint"),
+                    ).map((stop) => extractData(stop)),
+                },
+            };
+
+            console.log(customerInfo); // Logging the extracted information to the console
+        } catch (error) {
+            console.error("Error loading the XML file:", error);
         }
-
-        // Parsing the new XML structure
-        const allData = xmlDoc.querySelector("AllData");
-
-        const customerInfo = {
-            timeStamp: allData.querySelector("TimeStamp Value").textContent,
-            vehicleRef: allData.querySelector("VehicleRef Value").textContent,
-            defaultLanguage: allData.querySelector("DefaultLanguage Value").textContent,
-            tripInformation: {
-                tripRef: allData.querySelector("TripRef Value").textContent,
-                stopSequence: Array.from(allData.querySelectorAll("StopSequence StopPoint")).map(stop => extractData(stop))
-            }
-        };
-
-        console.log(customerInfo); // Logging the extracted information to the console
-    } catch (error) {
-        console.error("Error loading the XML file:", error);
     }
-}
-
 
     function SystemMonitoringService() {
         alert("SystemMonitoringService wurde aufgerufen!");
@@ -276,28 +279,36 @@
     let trainComposition = {}; // Initialisiert als leeres Objekt
     async function TrainSetInformationService() {
         try {
-        const response = await fetch("/localFiles/TrainSetInformationService.xml");
-        const data = await response.text();
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(data, "text/xml");
+            const response = await fetch(
+                "/localFiles/TrainSetInformationService.xml",
+            );
+            const data = await response.text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(data, "text/xml");
 
-        // Parsing train set composition data from the updated XML structure
-        const coachInfo = xmlDoc.querySelector("SingleCoach");
+            // Parsing train set composition data from the updated XML structure
+            const coachInfo = xmlDoc.querySelector("SingleCoach");
 
-        trainComposition = {
-            coachType: coachInfo.querySelector("CoachType Value").textContent,
-            coachNumber: coachInfo.querySelector("CoachNumber Value").textContent,
-            frontCabin: coachInfo.querySelector("FrontCabin Value").textContent,
-            rearCabin: coachInfo.querySelector("RearCabin Value").textContent,
-            coachPositionInTrainSet: coachInfo.querySelector("CoachPositionInTrainSet Value").textContent,
-            coupledSide: coachInfo.querySelector("CoupledSide").textContent,
-            coachState: coachInfo.querySelector("CoachState").textContent
-        };
+            trainComposition = {
+                coachType:
+                    coachInfo.querySelector("CoachType Value").textContent,
+                coachNumber:
+                    coachInfo.querySelector("CoachNumber Value").textContent,
+                frontCabin:
+                    coachInfo.querySelector("FrontCabin Value").textContent,
+                rearCabin:
+                    coachInfo.querySelector("RearCabin Value").textContent,
+                coachPositionInTrainSet: coachInfo.querySelector(
+                    "CoachPositionInTrainSet Value",
+                ).textContent,
+                coupledSide: coachInfo.querySelector("CoupledSide").textContent,
+                coachState: coachInfo.querySelector("CoachState").textContent,
+            };
 
-        console.log(trainComposition); // Logging the extracted information to the console
-    } catch (error) {
-        console.error("Error loading the XML file:", error);
-    }
+            console.log(trainComposition); // Logging the extracted information to the console
+        } catch (error) {
+            console.error("Error loading the XML file:", error);
+        }
     }
 
     // Mapping von Regex-Patterns zu Funktionen
@@ -313,11 +324,11 @@
     function handleServiceClick(serviceName) {
         for (const pattern in functionsMap) {
             let match = serviceName.match(new RegExp(pattern));
-        if (match) {
-            current_service = match[0]; // Setzt den Teil des serviceName, der mit dem Regex übereinstimmt
-            functionsMap[pattern]();
-            break;
-        }
+            if (match) {
+                current_service = match[0]; // Setzt den Teil des serviceName, der mit dem Regex übereinstimmt
+                functionsMap[pattern]();
+                break;
+            }
         }
         console.log("current_service: ", current_service);
     }
@@ -325,15 +336,12 @@
 
 <h1>Test Modular</h1>
 
-
-
-
 <h1>Geräte</h1>
 <p>folgende Geräte befinden sich in diesem Fahrzeug</p>
 
 {#each IPLevelServices as device}
     <div class="col-7 modern-col">
-        <Card IP={device.IP} device={device} current_service={current_service} handleServiceClick={handleServiceClick} />
+        <Card IP={device.IP} {device} {current_service} {handleServiceClick} />
     </div>{/each}
 
 <div class="collapse" id="collapseDeviceManagementService">
@@ -360,7 +368,9 @@
                 Die folgenden Informationen wurden aus der XML-Datei extrahiert:
             </p>
             <div>Wagennummer: {trainComposition.coachNumber}</div>
-            <div>Wagenposition im Zug: {trainComposition.coachPositionInTrainSet}</div>
+            <div>
+                Wagenposition im Zug: {trainComposition.coachPositionInTrainSet}
+            </div>
             <div>Wagenzustand: {trainComposition.coachState}</div>
             <div>Wagenkabine: {trainComposition.frontCabin}</div>
             <div>Wagenposition: {trainComposition.coupledSide}</div>
