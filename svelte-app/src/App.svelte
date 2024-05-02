@@ -4,16 +4,30 @@
 	import routes from "./routes.js";
 
 
+	let isDarkMode = false;
+
 
 </script>
 
-<Navigation />
+
+    <Navigation />
+
+    
+
+
+    <div class="borders">
+        <!-- Here I load the page depending on the current URL -->
+        <Router {routes} />
+</div>
 
 
 
-<div class="container mt-3">
-	<!-- Here we load the page depending on the current URL -->
-	<Router {routes} />
-  </div>
 
+
+<style>
+    .borders {
+        padding: 10px;
+        margin: 10px;
+    }
+</style>
 

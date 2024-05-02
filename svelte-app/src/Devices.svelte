@@ -159,6 +159,11 @@
     }
     getServices();
 
+    let currentHttpPath_Service = "";
+    let currentHttpPath_IP = "";
+    let currentHttpPath_Port = "";
+    let currentHttpPath_Path = "";
+
     //Speichert die IP-Adressen und die Services in IPLevelServices
     let IPLevelServices = [];
     let checkInterval = setInterval(() => {
@@ -176,33 +181,47 @@
 
     //gibt aus geholten mDNS-Daten die IP-Adressen aus und routet die Services auf die IP-Adressen
     function getIPsAndServices(data) {
-        let ipServices = {};
+    let ipServices = {};
 
-        data.forEach((item) => {
-            if (item.addresses && item.addresses.length > 0) {
-                const firstAddress = item.addresses[0];
-                if (!ipServices[firstAddress]) {
-                    ipServices[firstAddress] = {
-                        IP: firstAddress,
-                        services: [],
-                    };
-                }
-                ipServices[firstAddress].services.push(item.name);
+    data.forEach((item) => {
+        if (item.addresses && item.addresses.length > 0) {
+            const firstAddress = item.addresses[0];
+            if (!ipServices[firstAddress]) {
+                ipServices[firstAddress] = {
+                    IP: firstAddress,
+                    services: [],
+                };
             }
-        });
-        return ipServices;
-    }
+            const path = item.txt && item.txt.path ? item.txt.path : ''; // Überprüfung auf das Vorhandensein von "txt" und "path"
+            const port = item.port || ''; // Überprüfung auf das Vorhandensein von "port"
+            ipServices[firstAddress].services.push({ name: item.name, port: port, path: path });
+        }
+    });
+    return ipServices;
+}
+
 
     //////////////////////////////////////////
     // Funktionen für die einzelnen Services //
     //////////////////////////////////////////
 
-    // Testfunktion zum holen der XML-Werte
-    let xmlReturn = [];
-
     let deviceInfo = {}; // Initialisiert als leeres Objekt
     async function DeviceManagementService() {
         try {
+            
+            // Version mit richtigen HTTP-Requests
+            /* const method = "GetDeviceInformation";
+            //192.168.10.1:3083/services/ibis-ip/2.1/DeviceManagementService/GetDeviceInformation
+            const response = await axios.get(
+                "http://"+currentHttpPath_IP +":" + currentHttpPath_Port +currentHttpPath_Path +"/"+currentHttpPath_Service +"/" + method,
+                {
+                    responseType: "document",
+                },
+            );
+            const xmlDoc = response.data; */
+
+
+            //lokale Version
             const response = await fetch(
                 "/localFiles/DeviceManagementService.xml",
             );
@@ -212,15 +231,24 @@
 
             // Aktualisieren der globalen Variable mit neuen Daten
             deviceInfo = {
-                timeStamp: xmlDoc.querySelector("TimeStamp Value").textContent,
+                timeStamp:
+                    xmlDoc.querySelector("TimeStamp Value")?.textContent ||
+                    "Unknown",
                 deviceName:
-                    xmlDoc.querySelector("DeviceName Value").textContent,
+                    xmlDoc.querySelector("DeviceName Value")?.textContent ||
+                    "Unknown",
                 manufacturer:
-                    xmlDoc.querySelector("Manufacturer Value").textContent,
+                    xmlDoc.querySelector("Manufacturer Value")?.textContent ||
+                    "Unknown",
                 serialNumber:
-                    xmlDoc.querySelector("SerialNumber Value").textContent,
-                deviceClass: xmlDoc.querySelector("DeviceClass").textContent,
+                    xmlDoc.querySelector("SerialNumber Value")?.textContent ||
+                    "Unknown",
+                deviceClass:
+                    xmlDoc.querySelector("DeviceClass")?.textContent ||
+                    "Unknown",
             };
+
+            console.log("Extrahierte Geräteinformationen: ", deviceInfo); // Loggen der extrahierten Informationen
         } catch (error) {
             console.error("Error loading the XML file:", error);
         }
@@ -229,80 +257,117 @@
     let customerInfo = {}; // Initialisiert als leeres Objekt
     async function CustomerInformationService() {
         try {
-            const response = await fetch(
-                "/localFiles/CustomerInformationService.GetAllData.xml",
+            const method = "GetAllData";
+            console.log("HTTP: ", "http://"+currentHttpPath_IP +":" + currentHttpPath_Port +currentHttpPath_Path +"/"+currentHttpPath_Service +"/" + method,);
+            const response = await axios.get(
+                "http://"+currentHttpPath_IP +":" + currentHttpPath_Port +currentHttpPath_Path +"/"+currentHttpPath_Service +"/" + method,
+                {
+                    responseType: "document",
+                },
             );
+            //http://192.168.10.1:3085/services/ibis-ip/2.0/CustomerInformationService/GetAllData
+
+            const xmlDoc = response.data;
+
+            /* 
             const data = await response.text();
             const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(data, "text/xml");
+            const xmlDoc = parser.parseFromString(data, "text/xml"); */
 
-            // Function to recursively traverse and extract data from each node
+            // Diese Funktion extrahiert Daten aus jedem Knoten, auch aus verschachtelten "Value" Knoten
             function extractData(node) {
                 const result = {};
                 for (const child of node.children) {
-                    if (child.children.length > 0) {
-                        result[child.tagName] = extractData(child); // Recursive call for nested elements
+                    if (child.children.length) {
+                        // Bei verschachtelten Strukturen wird diese Funktion rekursiv aufgerufen
+                        result[child.tagName] = extractData(child);
+                    } else if (child.tagName === "Value") {
+                        // Der Textinhalt des "Value"-Tags wird direkt verwendet
+                        return child.textContent;
                     } else {
-                        result[child.tagName] = child.textContent;
+                        // Andernfalls wird der gesamte Knoten inklusive seiner Kindknoten übernommen
+                        result[child.tagName] = extractData(child);
                     }
                 }
                 return result;
             }
 
-            // Parsing the new XML structure
+            // Parsen der XML-Struktur
             const allData = xmlDoc.querySelector("AllData");
 
-            const customerInfo = {
-                timeStamp: allData.querySelector("TimeStamp Value").textContent,
+            // Extrahieren der Informationen entsprechend der Struktur im Bild
+            customerInfo = {
+                timeStamp:
+                    allData.querySelector("TimeStamp > Value")?.textContent ||
+                    "Unknown",
                 vehicleRef:
-                    allData.querySelector("VehicleRef Value").textContent,
-                defaultLanguage: allData.querySelector("DefaultLanguage Value")
-                    .textContent,
+                    allData.querySelector("VehicleRef > Value")?.textContent ||
+                    "Unknown",
+                defaultLanguage:
+                    allData.querySelector("DefaultLanguage > Value")
+                        ?.textContent || "Unknown",
                 tripInformation: {
-                    tripRef: allData.querySelector("TripRef Value").textContent,
+                    tripRef:
+                        allData.querySelector("TripRef > Value")?.textContent ||
+                        "Unknown",
                     stopSequence: Array.from(
-                        allData.querySelectorAll("StopSequence StopPoint"),
-                    ).map((stop) => extractData(stop)),
+                        allData.querySelectorAll("StopSequence > StopPoint"),
+                    ).map(extractData),
                 },
             };
 
-            console.log(customerInfo); // Logging the extracted information to the console
+            console.log("Extrahierte Kundeninformationen: ", customerInfo); // Loggen der extrahierten Informationen
         } catch (error) {
-            console.error("Error loading the XML file:", error);
+            console.error("Fehler beim Laden der XML-Datei:", error);
         }
     }
 
     function SystemMonitoringService() {
-        alert("SystemMonitoringService wurde aufgerufen!");
+        alert(
+            "SystemMonitoringService wurde aufgerufen! Dieser Service ist noch nicht implementiert.",
+        );
     }
 
     let trainComposition = {}; // Initialisiert als leeres Objekt
     async function TrainSetInformationService() {
         try {
-            const response = await fetch(
-                "/localFiles/TrainSetInformationService.xml",
+            //192.168.10.1:4031/services/ibis-ip/2.2/TrainSetInformationService/GetTrainSetComposition
+            const response = await axios.get(
+                "http://192.168.10.1:4031/services/ibis-ip/2.2/TrainSetInformationService/GetTrainSetComposition",
+                {
+                    responseType: "document",
+                },
             );
-            const data = await response.text();
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(data, "text/xml");
+
+            const xmlDoc = response.data;
+
+            console.log(xmlDoc);
 
             // Parsing train set composition data from the updated XML structure
             const coachInfo = xmlDoc.querySelector("SingleCoach");
 
             trainComposition = {
                 coachType:
-                    coachInfo.querySelector("CoachType Value").textContent,
+                    coachInfo.querySelector("CoachType Value")?.textContent ||
+                    "Unknown",
                 coachNumber:
-                    coachInfo.querySelector("CoachNumber Value").textContent,
+                    coachInfo.querySelector("CoachNumber Value")?.textContent ||
+                    "Unknown",
                 frontCabin:
-                    coachInfo.querySelector("FrontCabin Value").textContent,
+                    coachInfo.querySelector("FrontCabin Value")?.textContent ||
+                    "Unknown",
                 rearCabin:
-                    coachInfo.querySelector("RearCabin Value").textContent,
-                coachPositionInTrainSet: coachInfo.querySelector(
-                    "CoachPositionInTrainSet Value",
-                ).textContent,
-                coupledSide: coachInfo.querySelector("CoupledSide").textContent,
-                coachState: coachInfo.querySelector("CoachState").textContent,
+                    coachInfo.querySelector("RearCabin Value")?.textContent ||
+                    "Unknown",
+                coachPositionInTrainSet:
+                    coachInfo.querySelector("CoachPositionInTrainSet Value")
+                        ?.textContent || "Unknown",
+                coupledSide:
+                    coachInfo.querySelector("CoupledSide")?.textContent ||
+                    "Unknown",
+                coachState:
+                    coachInfo.querySelector("CoachState")?.textContent ||
+                    "Unknown",
             };
 
             console.log(trainComposition); // Logging the extracted information to the console
@@ -321,10 +386,14 @@
 
     let current_service = "";
     // Funktion, um die entsprechende Aktion zu finden und auszuführen
-    function handleServiceClick(serviceName) {
+    function handleServiceClick(serviceName, IP, Port, path) {
         for (const pattern in functionsMap) {
             let match = serviceName.match(new RegExp(pattern));
             if (match) {
+                currentHttpPath_Path = path;
+                currentHttpPath_Port = Port;
+                currentHttpPath_Service = match;
+                currentHttpPath_IP = IP;
                 current_service = match[0]; // Setzt den Teil des serviceName, der mit dem Regex übereinstimmt
                 functionsMap[pattern]();
                 break;
@@ -334,58 +403,105 @@
     }
 </script>
 
-<h1>Test Modular</h1>
+<p>Pfad Service: {currentHttpPath_Service}</p>
+<p>Pfad IP: {currentHttpPath_IP}</p>
+<p>Pfad Port: {currentHttpPath_Port}</p>
+<p>Pfad Path: {currentHttpPath_Path}</p>
 
 <h1>Geräte</h1>
 <p>folgende Geräte befinden sich in diesem Fahrzeug</p>
 
-{#each IPLevelServices as device}
-    <div class="col-7 modern-col">
-        <Card IP={device.IP} {device} {current_service} {handleServiceClick} />
-    </div>{/each}
-
-<div class="collapse" id="collapseDeviceManagementService">
-    <div class="card card-body">
-        <div>
-            <h1>Geräteinformationen DeviceManagementService</h1>
-            <p>
-                Die folgenden Informationen wurden aus der XML-Datei extrahiert:
-            </p>
-            <div>Gerätename: {deviceInfo.deviceName}</div>
-            <div>Hersteller: {deviceInfo.manufacturer}</div>
-            <div>Geräteklasse: {deviceInfo.deviceClass}</div>
-            <div>Geräteseriennummer: {deviceInfo.serialNumber}</div>
-            <div>Zeitstempel: {deviceInfo.timeStamp}</div>
-        </div>
+<div class="row">
+    <div class="col-6">
+        {#each IPLevelServices as device}
+            <Card
+                IP={device.IP}
+                {device}
+                {current_service}
+                {handleServiceClick}
+            />
+        {/each}
     </div>
-</div>
 
-<div class="collapse" id="collapseTrainSetInformationService">
-    <div class="card card-body">
-        <div>
-            <h1>Geräteinformationen TrainSetInformationService</h1>
-            <p>
-                Die folgenden Informationen wurden aus der XML-Datei extrahiert:
-            </p>
-            <div>Wagennummer: {trainComposition.coachNumber}</div>
-            <div>
-                Wagenposition im Zug: {trainComposition.coachPositionInTrainSet}
+    <div class="col-6">
+        <div class="collapse" id="collapseDeviceManagementService">
+            <div class="card card-body">
+                <div>
+                    <h1>Geräteinformationen DeviceManagementService</h1>
+                    <p>
+                        Der Device Management Service beschreibt grundlege
+                        Informationen zu einem Gerät.
+                    </p>
+                    <div>Gerätename: {deviceInfo.deviceName}</div>
+                    <div>Hersteller: {deviceInfo.manufacturer}</div>
+                    <div>Geräteklasse: {deviceInfo.deviceClass}</div>
+                    <div>Geräteseriennummer: {deviceInfo.serialNumber}</div>
+                    <div>Zeitstempel: {deviceInfo.timeStamp}</div>
+                </div>
             </div>
-            <div>Wagenzustand: {trainComposition.coachState}</div>
-            <div>Wagenkabine: {trainComposition.frontCabin}</div>
-            <div>Wagenposition: {trainComposition.coupledSide}</div>
-            <div>Wagenart: {trainComposition.coachType}</div>
         </div>
-    </div>
-</div>
 
-<div class="collapse" id="collapseCustomerInformationService">
-    <div class="card card-body">
-        <div>
-            <h1>Geräteinformationen CustomerInformationService</h1>
-            <p>
-                Die folgenden Informationen wurden aus der XML-Datei extrahiert:
-            </p>
+        <div class="collapse" id="collapseTrainSetInformationService">
+            <div class="card card-body">
+                <div>
+                    <h1>Geräteinformationen TrainSetInformationService</h1>
+                    <p>
+                        Der TrainSetInformationService enthält Informationen
+                        über die Wagenkomposition.
+                    </p>
+                    <div>Wagennummer: {trainComposition.coachNumber}</div>
+                    <div>
+                        Wagenposition im Zug: {trainComposition.coachPositionInTrainSet}
+                    </div>
+                    <div>Wagenzustand: {trainComposition.coachState}</div>
+                    <div>Wagenkabine: {trainComposition.frontCabin}</div>
+                    <div>Wagenposition: {trainComposition.coupledSide}</div>
+                    <div>Wagenart: {trainComposition.coachType}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="collapse" id="collapseCustomerInformationService">
+            <div class="card card-body">
+                <div>
+                    <h1>Geräteinformationen CustomerInformationService</h1>
+                    <p>
+                        Der CustomerInformationService enthält Informationen
+                        über den Fahrplan und die Haltestellen.
+                    </p>
+                    <div>Fahrzeugnummer: {customerInfo.vehicleRef}</div>
+                    <br /><br />
+
+                    <p class="d-inline-flex gap-1">
+                        <a
+                            class="btn rounded-2 d-flex align-items-start gap-2 py-2 px-3 lh-sm text-start"
+                            data-bs-toggle="collapse"
+                            href="#collapseExample"
+                            role="button"
+                            aria-expanded="false"
+                            aria-controls="collapseExample"
+                        >
+                            Stops anzeigen
+                        </a>
+                    </p>
+                    <div class="collapse" id="collapseExample">
+                        {#if customerInfo && customerInfo.tripInformation && customerInfo.tripInformation.stopSequence}
+                            <ul>
+                                {#each customerInfo.tripInformation.stopSequence as stop}
+                                    <b>Stopname: </b>{stop.StopName}
+                                    <br />
+                                    <b>Stop-Kürzel: </b>{stop.StopRef}
+                                    <br />
+                                    <b
+                                        >Distanz zu nächstem Stop:
+                                    </b>{stop.DistanceToNextStop}
+                                    <br /><br />
+                                {/each}
+                            </ul>
+                        {/if}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -397,5 +513,20 @@
     }
     .card-body {
         padding: 10px;
+    }
+
+    .btn {
+        margin: 5px;
+        background-color: white;
+        color: black;
+        white-space: normal;
+        overflow-wrap: break-word; /* Add this line */
+        word-break: break-word; /* Add this line */
+        border: 1px solid gray;
+        text-decoration: none;
+    }
+
+    .btn:hover {
+        background-color: #e2e6ea; /* Dunkleren Hintergrund beim Hover setzen */
     }
 </style>
