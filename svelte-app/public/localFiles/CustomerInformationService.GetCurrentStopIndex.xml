@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CustomerInformationService.GetCurrentStopIndexResponse>
+    <CurrentStopIndexData>
+        <TimeStamp>
+            <Value>2024-05-02T18:19:18</Value>
+        </TimeStamp>
+        <CurrentStopIndex>
+            <Value>8</Value>
+        </CurrentStopIndex>
+    </CurrentStopIndexData>
+</CustomerInformationService.GetCurrentStopIndexResponse>

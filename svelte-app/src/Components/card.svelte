@@ -20,7 +20,7 @@
                 >
                     <img src="../images/devices.svg" alt="Devices" />
                     <div>
-                        <strong class="d-block">Gerät: {IP}</strong>
+                        <strong class="d-block">Device: {IP}</strong>
                     </div>
                 </a>
             </li>
@@ -35,7 +35,7 @@
                     <img src="../images/services.png" alt="Devices" />
                     <div>
                         <strong class="d-block">Services</strong>
-                        <small>klicken, für Übersicht</small>
+                        <small>click, for overview</small>
                     </div>
                 </a>
             </li>

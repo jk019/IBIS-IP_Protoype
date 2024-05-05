@@ -181,25 +181,28 @@
 
     //gibt aus geholten mDNS-Daten die IP-Adressen aus und routet die Services auf die IP-Adressen
     function getIPsAndServices(data) {
-    let ipServices = {};
+        let ipServices = {};
 
-    data.forEach((item) => {
-        if (item.addresses && item.addresses.length > 0) {
-            const firstAddress = item.addresses[0];
-            if (!ipServices[firstAddress]) {
-                ipServices[firstAddress] = {
-                    IP: firstAddress,
-                    services: [],
-                };
+        data.forEach((item) => {
+            if (item.addresses && item.addresses.length > 0) {
+                const firstAddress = item.addresses[0];
+                if (!ipServices[firstAddress]) {
+                    ipServices[firstAddress] = {
+                        IP: firstAddress,
+                        services: [],
+                    };
+                }
+                const path = item.txt && item.txt.path ? item.txt.path : ""; // Überprüfung auf das Vorhandensein von "txt" und "path"
+                const port = item.port || ""; // Überprüfung auf das Vorhandensein von "port"
+                ipServices[firstAddress].services.push({
+                    name: item.name,
+                    port: port,
+                    path: path,
+                });
             }
-            const path = item.txt && item.txt.path ? item.txt.path : ''; // Überprüfung auf das Vorhandensein von "txt" und "path"
-            const port = item.port || ''; // Überprüfung auf das Vorhandensein von "port"
-            ipServices[firstAddress].services.push({ name: item.name, port: port, path: path });
-        }
-    });
-    return ipServices;
-}
-
+        });
+        return ipServices;
+    }
 
     //////////////////////////////////////////
     // Funktionen für die einzelnen Services //
@@ -208,7 +211,6 @@
     let deviceInfo = {}; // Initialisiert als leeres Objekt
     async function DeviceManagementService() {
         try {
-            
             // Version mit richtigen HTTP-Requests
             /* const method = "GetDeviceInformation";
             //192.168.10.1:3083/services/ibis-ip/2.1/DeviceManagementService/GetDeviceInformation
@@ -219,7 +221,6 @@
                 },
             );
             const xmlDoc = response.data; */
-
 
             //lokale Version
             const response = await fetch(
@@ -255,9 +256,11 @@
     }
 
     let customerInfo = {}; // Initialisiert als leeres Objekt
+    let StopIndex = {}; // Initialisiert als leeres Objekt
     async function CustomerInformationService() {
         try {
-            const method = "GetAllData";
+            // Version mit richtigen HTTP-Requests
+            /*  const method = "GetAllData";
             console.log("HTTP: ", "http://"+currentHttpPath_IP +":" + currentHttpPath_Port +currentHttpPath_Path +"/"+currentHttpPath_Service +"/" + method,);
             const response = await axios.get(
                 "http://"+currentHttpPath_IP +":" + currentHttpPath_Port +currentHttpPath_Path +"/"+currentHttpPath_Service +"/" + method,
@@ -266,59 +269,103 @@
                 },
             );
             //http://192.168.10.1:3085/services/ibis-ip/2.0/CustomerInformationService/GetAllData
+            const xmlDoc = response.data; */
 
-            const xmlDoc = response.data;
+            // Laden des ersten XML-Dokuments
+            const response1 = await fetch(
+                "/localFiles/CustomerInformationService.GetAllData.xml",
+            );
+            const data1 = await response1.text();
+            const parser1 = new DOMParser();
+            const xmlDoc1 = parser1.parseFromString(data1, "text/xml");
 
-            /* 
-            const data = await response.text();
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(data, "text/xml"); */
+            // Laden des zweiten XML-Dokuments
+            const response2 = await fetch(
+                "/localFiles/CustomerInformationService.GetCurrentStopIndex.xml",
+            );
+            const data2 = await response2.text();
+            const parser2 = new DOMParser();
+            const xmlDoc2 = parser2.parseFromString(data2, "text/xml");
 
-            // Diese Funktion extrahiert Daten aus jedem Knoten, auch aus verschachtelten "Value" Knoten
+            // Funktion zum Extrahieren von Daten aus einem XML-Knoten
             function extractData(node) {
                 const result = {};
                 for (const child of node.children) {
                     if (child.children.length) {
-                        // Bei verschachtelten Strukturen wird diese Funktion rekursiv aufgerufen
                         result[child.tagName] = extractData(child);
                     } else if (child.tagName === "Value") {
-                        // Der Textinhalt des "Value"-Tags wird direkt verwendet
-                        return child.textContent;
+                        result[child.parentNode.tagName] = child.textContent;
                     } else {
-                        // Andernfalls wird der gesamte Knoten inklusive seiner Kindknoten übernommen
                         result[child.tagName] = extractData(child);
                     }
                 }
                 return result;
             }
 
-            // Parsen der XML-Struktur
-            const allData = xmlDoc.querySelector("AllData");
-
-            // Extrahieren der Informationen entsprechend der Struktur im Bild
+            // Extrahieren der Informationen aus dem ersten XML-Dokument und Speichern in customerInfo
+            const allData1 = xmlDoc1.querySelector("AllData");
             customerInfo = {
                 timeStamp:
-                    allData.querySelector("TimeStamp > Value")?.textContent ||
+                    allData1.querySelector("TimeStamp > Value")?.textContent ||
                     "Unknown",
                 vehicleRef:
-                    allData.querySelector("VehicleRef > Value")?.textContent ||
+                    allData1.querySelector("VehicleRef > Value")?.textContent ||
                     "Unknown",
                 defaultLanguage:
-                    allData.querySelector("DefaultLanguage > Value")
+                    allData1.querySelector("DefaultLanguage > Value")
                         ?.textContent || "Unknown",
                 tripInformation: {
                     tripRef:
-                        allData.querySelector("TripRef > Value")?.textContent ||
-                        "Unknown",
+                        allData1.querySelector("TripRef > Value")
+                            ?.textContent || "Unknown",
                     stopSequence: Array.from(
-                        allData.querySelectorAll("StopSequence > StopPoint"),
+                        allData1.querySelectorAll("StopSequence > StopPoint"),
                     ).map(extractData),
                 },
             };
 
-            console.log("Extrahierte Kundeninformationen: ", customerInfo); // Loggen der extrahierten Informationen
+            // Extrahieren der Informationen aus dem zweiten XML-Dokument und Speichern in StopIndex
+            const currentStopIndexData = xmlDoc2.querySelector(
+                "CurrentStopIndexData",
+            );
+            StopIndex = {
+                timeStamp:
+                    currentStopIndexData.querySelector("TimeStamp > Value")
+                        ?.textContent || "Unknown",
+                currentStopIndex:
+                    currentStopIndexData.querySelector(
+                        "CurrentStopIndex > Value",
+                    )?.textContent || "Unknown",
+            };
+
+            console.log("Extrahierte Kundeninformationen: ", customerInfo); // Loggen der extrahierten Kundeninformationen
+            console.log("Stop Index: ", StopIndex); // Loggen des Stop-Index
+            console.log("Stopindex:", StopIndex.currentStopIndex); // Loggen des aktuellen Stopindex
         } catch (error) {
             console.error("Fehler beim Laden der XML-Datei:", error);
+        }
+    }
+    //sets the titles of the sections on CustomerInformationService
+    let chosenButton = "";
+    function handleClickAllStops() {
+        if (chosenButton !== "All stops") {
+            chosenButton = "All stops";
+        } else {
+            chosenButton = "";
+        }
+    }
+    function handleClickNextStops() {
+        if (chosenButton !== "Next stops") {
+            chosenButton = "Next stops";
+        } else {
+            chosenButton = "";
+        }
+    }
+    function handleClickPreviousStops() {
+        if (chosenButton !== "Previous stops") {
+            chosenButton = "Previous stops";
+        } else {
+            chosenButton = "";
         }
     }
 
@@ -331,17 +378,24 @@
     let trainComposition = {}; // Initialisiert als leeres Objekt
     async function TrainSetInformationService() {
         try {
+            // Version mit richtigen HTTP-Requests
+            /* const method = "GetTrainSetComposition";
             //192.168.10.1:4031/services/ibis-ip/2.2/TrainSetInformationService/GetTrainSetComposition
             const response = await axios.get(
-                "http://192.168.10.1:4031/services/ibis-ip/2.2/TrainSetInformationService/GetTrainSetComposition",
+                "http://"+currentHttpPath_IP +":" + currentHttpPath_Port +currentHttpPath_Path +"/"+currentHttpPath_Service +"/" + method,
                 {
                     responseType: "document",
                 },
             );
+            const xmlDoc = response.data; */
 
-            const xmlDoc = response.data;
-
-            console.log(xmlDoc);
+            //lokale Version
+            const response = await fetch(
+                "/localFiles/TrainSetInformationService.xml",
+            );
+            const data = await response.text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(data, "text/xml");
 
             // Parsing train set composition data from the updated XML structure
             const coachInfo = xmlDoc.querySelector("SingleCoach");
@@ -403,13 +457,8 @@
     }
 </script>
 
-<p>Pfad Service: {currentHttpPath_Service}</p>
-<p>Pfad IP: {currentHttpPath_IP}</p>
-<p>Pfad Port: {currentHttpPath_Port}</p>
-<p>Pfad Path: {currentHttpPath_Path}</p>
-
-<h1>Geräte</h1>
-<p>folgende Geräte befinden sich in diesem Fahrzeug</p>
+<h1>Devices</h1>
+<p>The following devices are in this vehicle</p>
 
 <div class="row">
     <div class="col-6">
@@ -427,16 +476,16 @@
         <div class="collapse" id="collapseDeviceManagementService">
             <div class="card card-body">
                 <div>
-                    <h1>Geräteinformationen DeviceManagementService</h1>
+                    <h1>DeviceManagementService</h1>
                     <p>
-                        Der Device Management Service beschreibt grundlege
-                        Informationen zu einem Gerät.
+                        The DeviceManagementService describes basic information
+                        about a device.
                     </p>
-                    <div>Gerätename: {deviceInfo.deviceName}</div>
-                    <div>Hersteller: {deviceInfo.manufacturer}</div>
-                    <div>Geräteklasse: {deviceInfo.deviceClass}</div>
-                    <div>Geräteseriennummer: {deviceInfo.serialNumber}</div>
-                    <div>Zeitstempel: {deviceInfo.timeStamp}</div>
+                    <div><b>device name: </b>{deviceInfo.deviceName}</div>
+                    <div><b>manufacturer: </b>{deviceInfo.manufacturer}</div>
+                    <div><b>device class: </b>{deviceInfo.deviceClass}</div>
+                    <div><b>serial number: </b>{deviceInfo.serialNumber}</div>
+                    <div><b>timestamp: </b>{deviceInfo.timeStamp}</div>
                 </div>
             </div>
         </div>
@@ -444,19 +493,25 @@
         <div class="collapse" id="collapseTrainSetInformationService">
             <div class="card card-body">
                 <div>
-                    <h1>Geräteinformationen TrainSetInformationService</h1>
+                    <h1>TrainSetInformationService</h1>
                     <p>
-                        Der TrainSetInformationService enthält Informationen
-                        über die Wagenkomposition.
+                        The TrainSetInformationService describes basic
+                        information about the composition of a train.
                     </p>
-                    <div>Wagennummer: {trainComposition.coachNumber}</div>
                     <div>
-                        Wagenposition im Zug: {trainComposition.coachPositionInTrainSet}
+                        <b>coachnumber: </b>{trainComposition.coachNumber}
                     </div>
-                    <div>Wagenzustand: {trainComposition.coachState}</div>
-                    <div>Wagenkabine: {trainComposition.frontCabin}</div>
-                    <div>Wagenposition: {trainComposition.coupledSide}</div>
-                    <div>Wagenart: {trainComposition.coachType}</div>
+                    <div>
+                        <b
+                            >coach position in trainset:
+                        </b>{trainComposition.coachPositionInTrainSet}
+                    </div>
+                    <div><b>coachstate: </b>{trainComposition.coachState}</div>
+                    <div><b>front cabin: </b>{trainComposition.frontCabin}</div>
+                    <div>
+                        <b>coupled side: </b>{trainComposition.coupledSide}
+                    </div>
+                    <div><b>coach type: </b>{trainComposition.coachType}</div>
                 </div>
             </div>
         </div>
@@ -464,41 +519,165 @@
         <div class="collapse" id="collapseCustomerInformationService">
             <div class="card card-body">
                 <div>
-                    <h1>Geräteinformationen CustomerInformationService</h1>
+                    <h1>CustomerInformationService</h1>
                     <p>
-                        Der CustomerInformationService enthält Informationen
-                        über den Fahrplan und die Haltestellen.
+                        The CustomerInformationService describes basic
+                        information about a trip.
                     </p>
-                    <div>Fahrzeugnummer: {customerInfo.vehicleRef}</div>
-                    <br /><br />
+                    <div><b>Vehicleref: </b>{customerInfo.vehicleRef}</div>
+                    <br />
+
+                    <div class="card-header">
+                        <h3>Current stop</h3>
+
+                        {#if customerInfo && customerInfo.tripInformation && customerInfo.tripInformation.stopSequence}
+                            {#each customerInfo.tripInformation.stopSequence as stop}
+                                {#if Number(stop.StopIndex.StopIndex) == Number(StopIndex.currentStopIndex)}
+                                    <b>Stopname: </b>{stop.StopName.StopName}
+                                    <br />
+                                    <b>StopRef: </b>{stop.StopRef.StopRef}
+                                    <br />
+                                    <b>Index: </b>
+                                    {stop.StopIndex.StopIndex}
+                                    <br />
+                                    <b>Distance to next stop: </b>{stop
+                                        .DistanceToNextStop.DistanceToNextStop}
+
+                                    <br /><br />
+                                {/if}
+                            {/each}
+                        {/if}
+                    </div>
+                    <br />
 
                     <p class="d-inline-flex gap-1">
                         <a
                             class="btn rounded-2 d-flex align-items-start gap-2 py-2 px-3 lh-sm text-start"
                             data-bs-toggle="collapse"
-                            href="#collapseExample"
+                            href="#collapseExampleScrollableAllStops"
                             role="button"
                             aria-expanded="false"
-                            aria-controls="collapseExample"
+                            aria-controls="collapseExampleScrollableAllStops"
+                            on:click|preventDefault={handleClickAllStops}
                         >
-                            Stops anzeigen
+                            show all stops
+                        </a>
+                        <a
+                            class="btn rounded-2 d-flex align-items-start gap-2 py-2 px-3 lh-sm text-start"
+                            data-bs-toggle="collapse"
+                            href="#collapseExampleScrollableNextStops"
+                            role="button"
+                            aria-expanded="false"
+                            aria-controls="collapseExampleScrollableNextStops"
+                            on:click|preventDefault={handleClickNextStops}
+                        >
+                            show next stops
+                        </a>
+                        <a
+                            class="btn rounded-2 d-flex align-items-start gap-2 py-2 px-3 lh-sm text-start"
+                            data-bs-toggle="collapse"
+                            href="#collapseExampleScrollablePreviousStops"
+                            role="button"
+                            aria-expanded="false"
+                            aria-controls="collapseExampleScrollablePreviousStops"
+                            on:click|preventDefault={handleClickPreviousStops}
+                        >
+                            show previous stops
                         </a>
                     </p>
-                    <div class="collapse" id="collapseExample">
-                        {#if customerInfo && customerInfo.tripInformation && customerInfo.tripInformation.stopSequence}
-                            <ul>
-                                {#each customerInfo.tripInformation.stopSequence as stop}
-                                    <b>Stopname: </b>{stop.StopName}
-                                    <br />
-                                    <b>Stop-Kürzel: </b>{stop.StopRef}
-                                    <br />
-                                    <b
-                                        >Distanz zu nächstem Stop:
-                                    </b>{stop.DistanceToNextStop}
-                                    <br /><br />
-                                {/each}
-                            </ul>
-                        {/if}
+
+                    <h4>{chosenButton}</h4>
+
+                    <div class="accordion" id="accordionButtonsCIS">
+                        <!--show all stops-->
+                        <div
+                            class="collapse"
+                            id="collapseExampleScrollableAllStops"
+                            style="overflow-y: scroll"
+                            data-bs-parent="#accordionButtonsCIS"
+                        >
+                            {#if customerInfo && customerInfo.tripInformation && customerInfo.tripInformation.stopSequence}
+                                <ul>
+                                    {#each customerInfo.tripInformation.stopSequence as stop}
+                                        <b>Stopname: </b>{stop.StopName
+                                            .StopName}
+                                        <br />
+                                        <b>StopRef: </b>{stop.StopRef.StopRef}
+                                        <br />
+                                        <b>Index: </b>
+                                        {stop.StopIndex.StopIndex}
+                                        <br />
+                                        <b>Distance to next stop: </b>{stop
+                                            .DistanceToNextStop
+                                            .DistanceToNextStop}
+
+                                        <br /><br />
+                                    {/each}
+                                </ul>
+                            {/if}
+                        </div>
+
+                        <!--show next stops-->
+                        <div
+                            class="collapse"
+                            id="collapseExampleScrollableNextStops"
+                            style="overflow-y: scroll"
+                            data-bs-parent="#accordionButtonsCIS"
+                        >
+                            {#if customerInfo && customerInfo.tripInformation && customerInfo.tripInformation.stopSequence}
+                                <ul>
+                                    {#each customerInfo.tripInformation.stopSequence as stop}
+                                        {#if Number(stop.StopIndex.StopIndex) >= Number(StopIndex.currentStopIndex)}
+                                            <b>Stopname: </b>{stop.StopName
+                                                .StopName}
+                                            <br />
+                                            <b>StopRef: </b>{stop.StopRef
+                                                .StopRef}
+                                            <br />
+                                            <b>Index: </b>
+                                            {stop.StopIndex.StopIndex}
+                                            <br />
+                                            <b>Distance to next stop: </b>{stop
+                                                .DistanceToNextStop
+                                                .DistanceToNextStop}
+
+                                            <br /><br />
+                                        {/if}
+                                    {/each}
+                                </ul>
+                            {/if}
+                        </div>
+
+                        <!--show previous stops-->
+                        <div
+                            class="collapse"
+                            id="collapseExampleScrollablePreviousStops"
+                            style="overflow-y: scroll"
+                            data-bs-parent="#accordionButtonsCIS"
+                        >
+                            {#if customerInfo && customerInfo.tripInformation && customerInfo.tripInformation.stopSequence}
+                                <ul>
+                                    {#each customerInfo.tripInformation.stopSequence.reverse() as stop}
+                                        {#if Number(stop.StopIndex.StopIndex) < Number(StopIndex.currentStopIndex)}
+                                            <b>Stopname: </b>{stop.StopName
+                                                .StopName}
+                                            <br />
+                                            <b>StopRef: </b>{stop.StopRef
+                                                .StopRef}
+                                            <br />
+                                            <b>Index: </b>
+                                            {stop.StopIndex.StopIndex}
+                                            <br />
+                                            <b>Distance to next stop: </b>{stop
+                                                .DistanceToNextStop
+                                                .DistanceToNextStop}
+
+                                            <br /><br />
+                                        {/if}
+                                    {/each}
+                                </ul>
+                            {/if}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -528,5 +707,15 @@
 
     .btn:hover {
         background-color: #e2e6ea; /* Dunkleren Hintergrund beim Hover setzen */
+    }
+
+    #collapseExampleScrollableAllStops {
+        height: 400px;
+    }
+    #collapseExampleScrollableNextStops {
+        height: 400px;
+    }
+    #collapseExampleScrollablePreviousStops {
+        height: 400px;
     }
 </style>

@@ -2,7 +2,7 @@
 
 <nav class="navbar navbar-dark bg-dark fixed-top"> 
   <div class="container-fluid">
-    <a class="navbar-brand" href="#/">IBIS-IP</a>
+    <a class="navbar-brand" href="#/devices">IBIS-IP</a>
     <button
       class="navbar-toggler"
       type="button"
