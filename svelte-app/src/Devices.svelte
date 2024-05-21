@@ -426,9 +426,6 @@
     }
 </script>
 
-
-
-
 <h1>Devices</h1>
 <div class="alert alert-light" role="alert">
     The following devices are located in this vehicle
@@ -460,16 +457,12 @@
 
         <div class="collapse" id="collapseCustomerInformationService">
             <div class="card card-body">
-                <CollapseCustomerInformationService
-                    {customerInfo}
-                    {StopIndex}></CollapseCustomerInformationService>
-                
-             </div>
+                <CollapseCustomerInformationService {customerInfo} {StopIndex}
+                ></CollapseCustomerInformationService>
+            </div>
         </div>
     </div>
 </div>
-
-
 
 <style>
     .card {
