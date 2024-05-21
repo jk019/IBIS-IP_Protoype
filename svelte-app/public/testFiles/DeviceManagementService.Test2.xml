@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DeviceManagementService.GetDeviceInformationResponse>
+    <DeviceManagementService.GetDeviceInformationResponseData>
+        <TimeStamp>
+            <Value>2024-05-02T17:13:32</Value>
+        </TimeStamp>
+        <DeviceInformation>
+            <DeviceName>
+                <Value>IBISplus24570</Value>
+            </DeviceName>
+            <Manufacturer>
+                <Value>TPZ</Value>
+            </Manufacturer>
+            <SerialNumber>
+                <Value>AFVRPE</Value>
+            </SerialNumber>
+            <DeviceClass>OnBoardUnit</DeviceClass>
+        </DeviceInformation>
+    </DeviceManagementService.GetDeviceInformationResponseData>
+</DeviceManagementService.GetDeviceInformationResponse>Y

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TrainSetInformationService.GetTrainSetCompositionResponse>
+    <SingleCoach>
+        <CoachType>
+            <Value>None</Value>
+        </CoachType>
+        <CoachNumber>
+            <Value>24570</Value>
+        </CoachNumber>
+        <FrontCabin>
+            <Value>None</Value>
+        </FrontCabin>
+        <RearCabin>
+            <Value>None</Value>
+        </RearCabin>
+        <CoachPositionInTrainSet>
+            <Value>99</Value>
+        </CoachPositionInTrainSet>
+        <CoachState>Master</CoachState>
+    </SingleCoach>
+</TrainSetInformationService.GetTrainSetCompositionResponse>

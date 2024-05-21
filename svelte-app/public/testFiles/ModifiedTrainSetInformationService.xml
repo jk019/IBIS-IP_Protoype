@@ -1,0 +1,18 @@
+<TrainSetInformationService.GetTrainSetCompositionResponse>
+    <SingleCoach>
+        <CoachType>
+            <Value>None</Value>
+        </CoachType>
+        <CoachNumber>24542<Value>Occupied</Value>
+        </CoachNumber>
+        <FrontCabin>
+            <Value>None</Value>
+        </FrontCabin>
+        <RearCabin>
+            <Value>None</Value>
+        </RearCabin>
+        <CoachPositionInTrainSet>9<Value>None</Value>
+        </CoachPositionInTrainSet>
+        <CoachState>Unavailable</CoachState>
+    </SingleCoach>
+</TrainSetInformationService.GetTrainSetCompositionResponse>
