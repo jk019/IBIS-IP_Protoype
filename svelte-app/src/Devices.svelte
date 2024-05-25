@@ -6,6 +6,7 @@
 
     //array for offline-Development
     let realservices2 = [
+       
         {
             addresses: ["192.168.10.32"],
             name: "DeviceManagementService_bitctrl_TFT--3200--32_1",
@@ -151,11 +152,6 @@
         },
     ];
 
-    let currentHttpPath_Service = "";
-    let currentHttpPath_IP = "";
-    let currentHttpPath_Port = "";
-    let currentHttpPath_Path = "";
-
     //Saves the IP addresses and the services in IPLevelServices
     let IPLevelServices = [];
     let checkInterval = setInterval(() => {
@@ -184,8 +180,8 @@
                         services: [],
                     };
                 }
-                const path = item.txt && item.txt.path ? item.txt.path : ""; // Überprüfung auf das Vorhandensein von "txt" und "path"
-                const port = item.port || ""; // Überprüfung auf das Vorhandensein von "port"
+                const path = item.txt && item.txt.path ? item.txt.path : ""; // Check for the presence of "txt" and "path"
+                const port = item.port || ""; // Check for the presence of "port"
                 ipServices[firstAddress].services.push({
                     name: item.name,
                     port: port,
@@ -338,12 +334,6 @@
         }
     }
 
-    function SystemMonitoringService() {
-        alert(
-            "The SystemMonitoringService has been invoked! Although this service has been identified on the device, please note that it is currently a prototype and has not been fully implemented yet.",
-        );
-    }
-
     let trainComposition = {}; // Initialised as an empty object
     async function TrainSetInformationService() {
         try {
@@ -403,27 +393,47 @@
     const functionsMap = {
         "^DeviceManagementService": DeviceManagementService,
         "^CustomerInformationService": CustomerInformationService,
-        "^SystemMonitoringService": SystemMonitoringService,
         "^TrainSetInformationService": TrainSetInformationService,
     };
 
+    // Default function to call when no regex matches
+    function defaultService() {
+        alert(
+            "A Service has been invoked! Although this service has been identified on the device, please note that it is currently a prototype and has not been fully implemented yet.",
+        );
+    }
+
     let current_service = "";
+    let currentHttpPath_Service = "";
+    let currentHttpPath_IP = "";
+    let currentHttpPath_Port = "";
+    let currentHttpPath_Path = "";
+
     // Function to find and execute the corresponding action
     function handleServiceClick(serviceName, IP, Port, path) {
-        for (const pattern in functionsMap) {
-            let match = serviceName.match(new RegExp(pattern));
-            if (match) {
-                currentHttpPath_Path = path;
-                currentHttpPath_Port = Port;
-                currentHttpPath_Service = match;
-                currentHttpPath_IP = IP;
-                current_service = match[0]; // Sets the part of the serviceName that matches the regex
-                functionsMap[pattern]();
-                break;
-            }
+    let matched = false;
+    
+    for (const pattern in functionsMap) {
+        let match = serviceName.match(new RegExp(pattern));
+        if (match) {
+            currentHttpPath_Path = path;
+            currentHttpPath_Port = Port;
+            currentHttpPath_Service = match[0]; // Using the full matched string
+            currentHttpPath_IP = IP;
+            current_service = match[0]; // Sets the part of the serviceName that matches the regex
+            functionsMap[pattern]();
+            matched = true;
+            break;
         }
-        console.log("current_service: ", current_service);
     }
+    
+    // If no match was found, call the default service
+    if (!matched) {
+        defaultService();
+    }
+    
+    console.log("current_service: ", current_service);
+}
 </script>
 
 <h1>Devices</h1>
