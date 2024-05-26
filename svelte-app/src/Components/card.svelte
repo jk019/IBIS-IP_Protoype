@@ -3,10 +3,7 @@
     export let device = [];
     export let current_service = "";
     export let handleServiceClick;
-
 </script>
-
-
 
 <div
     class="dropdown-menu position-static d-flex flex-column flex-lg-row align-items-stretch justify-content-start p-3 rounded-3 shadow-lg main-content"
@@ -59,10 +56,17 @@
                             data-bs-target="#collapse{current_service}"
                             aria-expanded="false"
                             aria-controls="collapse{current_service}"
-                            on:click={() => handleServiceClick(service.name, IP, service.port, service.path)}
+                            on:click={() =>
+                                handleServiceClick(
+                                    service.name,
+                                    IP,
+                                    service.port,
+                                    service.path,
+                                )}
                             data-bs-parent="#accordionExample"
                         >
-                            {service.name} {service.port}
+                            {service.name}
+                            {service.port}
                         </button>
                     {/each}
                 </ul>
